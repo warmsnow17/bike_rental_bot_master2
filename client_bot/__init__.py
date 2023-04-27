@@ -20,12 +20,24 @@ from . import handlers
 
 executor = Executor(dp, skip_updates=True)
 
+async def on_startup(dp):
+    # await bot.send_message(chat_id=config.ADMIN_ID, text="Бот запущен")
+
+    await bot.set_my_commands(
+        [
+            types.BotCommand(command="restart_bot", description="Перезапустить бота"),
+            types.BotCommand(command="contact_manager", description="Написать менеджеру"),
+        ]
+    )
+    await db.init(config=config.TORTOISE_ORM)
+
+async def on_shutdown(dp):
+    await db.close_connections()
 
 @executor.on_startup
 async def init(dispatcher: Dispatcher):
-    await db.init(config=config.TORTOISE_ORM)
-
+    await on_startup(dispatcher)
 
 @executor.on_shutdown
 async def shutdown(dispatcher: Dispatcher):
-    await db.close_connections()
+    await on_shutdown(dispatcher)

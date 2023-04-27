@@ -51,5 +51,11 @@ class User(TimedBaseModel):
             return None
         return managers[0]
 
+    @classmethod
+    async def get_manager_for_user(cls, user: 'User') -> typing.Optional['User']:
+        manager = await cls.get_random_manager()
+        return manager
+
+
     def __str__(self) -> str:
         return self.username
