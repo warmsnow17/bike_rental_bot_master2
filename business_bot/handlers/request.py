@@ -1,7 +1,9 @@
+import logging
 from datetime import datetime, timedelta
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, states, keyboards, constants, helpers
+from business_bot.middleware.option import haversine_distance
 from client_bot import keyboards as client_keyboards, dp as client_dp
 from database.models import User, BikeOffer, RentalRequest
 
@@ -41,8 +43,11 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
         offer.status = BikeOffer.OfferStatuses.CONFIRMED
         await offer.save()
         client_replies = constants.REPLIES.get(offer.client.language)
-        
-        reply_text = client_replies.get('confirmed_offer_reply_for_client', constants.DEFAULT_BIKE_OFFER_MESSAGE).format(
+        garage = await offer.bike.garage
+        distance = haversine_distance(offer.request.lat, offer.request.lon, garage.lat, garage.lon)
+        logging.info(f"Проверка дистанции {distance}")
+        reply_text = client_replies.get('confirmed_offer_reply_for_client',
+                                        constants.DEFAULT_BIKE_OFFER_MESSAGE).format(
             offer=offer,
             bike=offer.bike,
             color=helpers.language.get_translation(
@@ -59,7 +64,8 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
                 'yes_button_label', 'Да'
             ) if offer.bike.keyless else helpers.language.get_translation(user.language, 'no_button_label', 'Нет'),
             usd_price=round(float(offer.price_with_fee) / idr_exchange_rate, 2),
-            usd_total_sum=round(float(offer.total_sum_with_fee) / idr_exchange_rate, 2)
+            usd_total_sum=round(float(offer.total_sum_with_fee) / idr_exchange_rate, 2),
+            distance=round(distance, 2)
         )
         keyboard = client_keyboards.AcceptOfferKeyboard(offer.client.language, offer_id=offer.pk)
         photos = await offer.bike.photos.all()

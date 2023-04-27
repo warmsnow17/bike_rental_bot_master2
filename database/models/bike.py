@@ -37,6 +37,7 @@ class Bike(TimedBaseModel):
     monthly_price = fields.DecimalField(max_digits=10, decimal_places=2, default=0)
     bimonthly_price = fields.DecimalField(max_digits=10, decimal_places=2, default=0)
     rental_start_date = fields.DatetimeField(null=True)
+    garage = fields.ForeignKeyField('models.Garage', related_name='bikes')
 
     @classmethod
     async def get_for_request(cls, request: RentalRequest) -> list['Bike']:

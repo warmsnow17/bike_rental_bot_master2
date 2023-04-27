@@ -218,7 +218,8 @@ DEFAULT_BIKE_OFFER_MESSAGE = """Модель: {bike.model.name}
 ABS: {abs_support}
 Бесключевой доступ: {keyless_support}
 Цена за сутки: {usd_price}$
-Стоимость: {usd_total_sum}$"""
+Стоимость: {usd_total_sum}$
+Расстояние: {distance} км"""
 
 
 DEFAULT_BIKE_OFFER_MESSAGE_EN = """Model: {bike.model.name}
@@ -228,7 +229,8 @@ Colour: {color}
 ABS: {abs_support}
 Keyless: {keyless_support}
 Daily price: {usd_price}$
-Total Price: {usd_total_sum}$"""
+Total Price: {usd_total_sum}$
+Distance: {distance} kilometers"""
 
 DEFAULT_BIKE_OFFER_MESSAGE_ID = """Model: {bike.model.name}
 Tahun: {bike.year}
