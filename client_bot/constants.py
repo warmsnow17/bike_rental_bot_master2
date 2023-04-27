@@ -350,3 +350,18 @@ REPLIES = {
         'new_rental_request': 'Hi, saya tertarik dengan "{bike.model.name}" untuk "{rent_amount}"!\nApakah tersedia sekarang?',
     }
 }
+
+MANAGERS_UNAVAILABLE = {
+    'ru': "Извините, в данный момент менеджеры недоступны.",
+    'en': "Sorry, managers are not available at the moment.",
+}
+
+CONTACT_MANAGER = {
+    'ru': "Вы можете связаться с менеджером, нажав на кнопку ниже:",
+    'en': "You can contact the manager by pressing the button below:",
+}
+
+SUBSCRIBE_TO_CHANNEL = {
+    'ru': "Пожалуйста, подпишитесь на наш канал, чтобы начать использовать бота. Затем вернитесь в бота и попробуйте снова.",
+    'en': "Please subscribe to our channel to start using the bot. Then return to the bot and try again.",
+}
