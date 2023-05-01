@@ -450,8 +450,8 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
             business_replies = constants.REPLIES.get(bike.user.language)
             message_text = business_replies.get(
                 'new_rental_request',
-                'Привет! Интересует {bike.model.name} на {rent_amount} дней \n\n Он свободен сейчас?'
-            ).format(bike=bike, rent_amount=rent_amount)
+                'Привет! Интересует {bike.model.name} на {rent_amount} дней с {start_date} \n\n Он свободен сейчас?'
+            ).format(bike=bike, rent_amount=rent_amount, start_date=start_date.strftime("%d.%m.%Y"))
             keyboard = keyboards.NewBikeRentRequestKeyboard(bike.user.language, offer.pk)
             message = await helpers.message.send_message(
                 business_bot_dp.bot,

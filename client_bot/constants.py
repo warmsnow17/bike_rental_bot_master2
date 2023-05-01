@@ -248,7 +248,7 @@ REPLIES = {
         'rent_confirmation_reply': ORDER_CONFIRMATION,
         'simple_rent_confirmation_reply': SIMPLE_ORDER_CONFIRMATION,
         'request_complete_ask_reply': 'Сейчас я опрашиваю сервисы аренды. Поиск продлится не более 5 минут.\nПо мере подтверждения предложения начнут появляться в чате.',
-        'new_rental_request': 'Привет! Интересует {bike.model.name} на {rent_amount} дней! Он свободен сейчас?',
+        'new_rental_request': 'Привет! Интересует {bike.model.name} на {rent_amount} дней с {start_date} \n\n Он свободен сейчас?',
         'request_complete_nothing_found_reply': 'Нет подходящих байков. Попробуй изменить параметры поиска',
         'accepted_offer_reply': 'Отличный выбор. Менеджер свяжется с тобой в течении 5ти минут. Но если ты торопишься, нажми “Написать менеджеру”',
         'new_offer_for_manager': NEW_MANAGER_OFFER_REPLY,
