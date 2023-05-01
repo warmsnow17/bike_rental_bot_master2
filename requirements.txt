@@ -57,4 +57,3 @@ XlsxWriter==3.0.8
 yarl==1.8.2
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-

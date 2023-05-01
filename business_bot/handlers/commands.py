@@ -7,6 +7,17 @@ import config
 
 @dp.message_handler(state='*', commands=['start'])
 async def start(message: types.Message, user: User, replies: dict[str, str], is_new_user: bool, state: FSMContext):
+    user, created = await User.get_by_telegram_id_or_create(
+        message.from_user.id,
+        message.from_user.username,
+        message.from_user.first_name,
+        message.from_user.last_name,
+        message.from_user.language_code
+    )
+
+    if not created and user.username != message.from_user.username:
+        await user.update_username(message.from_user.username)
+
     if state:
         await state.finish()
 

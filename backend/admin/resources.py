@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 from starlette.requests import Request
 from fastapi_admin.app import app
 from fastapi_admin.resources import Field, Link, Model, inputs, ToolbarAction, Action
@@ -138,12 +138,12 @@ class GarageResource(Model):
         )
     ]
 
-
 @app.register
 class RentalRequestResource(Model):
     label = 'Запросы на аренду'
     model = RentalRequest
     icon = 'fas fa-garage'
+    page_size = 100
     filters = [
         filters.Search(
             name='pk',
@@ -151,7 +151,9 @@ class RentalRequestResource(Model):
             search_mode='equal',
             placeholder='Поиск заявки по номеру',
         )
+
     ]
+
     fields = [
         'id',
         ComputedForeignKeyField(
@@ -220,6 +222,7 @@ class RentalRequestResource(Model):
             label='Сумма',
         ),
     ]
+
 
     async def get_toolbar_actions(self, request: Request) -> List[ToolbarAction]:
         return [

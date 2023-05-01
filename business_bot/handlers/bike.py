@@ -291,6 +291,7 @@ async def review_message(message: types.Message, user: User, replies: dict[str, 
 @dp.callback_query_handler(state=states.BikeState.review)
 async def review_message(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
     _, _, answer = query.data.split(':', maxsplit=2)
+    current_garage = await user.garages.all().first()
     if answer == 'yes':
         bike_data = await state.get_data()
         bike_id = bike_data.get('bike_id', None)
@@ -334,7 +335,8 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
                     price=bike_data['price'],
                     weekly_price=bike_data['weekly_price'],
                     biweekly_price=bike_data['biweekly_price'],
-                    monthly_price=bike_data['monthly_price']
+                    monthly_price=bike_data['monthly_price'],
+                    garage=current_garage
                 )
                 manager = await User.get_random_manager()
                 if manager:

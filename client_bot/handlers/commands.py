@@ -27,6 +27,18 @@ async def is_user_subscribed(message: types.Message):
 
 @dp.message_handler(state='*', commands=['start'])
 async def start_command(message: types.Message, user: User, replies: dict[str, str], is_new_user: bool, state: FSMContext):
+
+    user, created = await User.get_by_telegram_id_or_create(
+        message.from_user.id,
+        message.from_user.username,
+        message.from_user.first_name,
+        message.from_user.last_name,
+        message.from_user.language_code
+    )
+
+    if not created and user.username != message.from_user.username:
+        await user.update_username(message.from_user.username)
+
     if not await is_user_subscribed(message):
         return await prompt_user_to_subscribe(message, user)
     if state:
@@ -44,6 +56,17 @@ async def start_command(message: types.Message, user: User, replies: dict[str, s
 
 @dp.message_handler(state='*', commands=["restart_bot"])
 async def restart_bot(message: types.Message, user: User, replies: dict[str, str], is_new_user: bool, state: FSMContext):
+    user, created = await User.get_by_telegram_id_or_create(
+        message.from_user.id,
+        message.from_user.username,
+        message.from_user.first_name,
+        message.from_user.last_name,
+        message.from_user.language_code
+    )
+
+    if not created and user.username != message.from_user.username:
+        await user.update_username(message.from_user.username)
+
     if not await is_user_subscribed(message):
         return await prompt_user_to_subscribe(message, user)
     if state is not None:
