@@ -63,8 +63,8 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
                 offer.client.language,
                 'yes_button_label', 'Да'
             ) if offer.bike.keyless else helpers.language.get_translation(user.language, 'no_button_label', 'Нет'),
-            usd_price=round(float(offer.price_with_fee) / idr_exchange_rate, 2),
-            usd_total_sum=round(float(offer.total_sum_with_fee) / idr_exchange_rate, 2),
+            usd_price=round(float(offer.price_with_fee) / 1000),
+            usd_total_sum=round(float(offer.total_sum_with_fee) / 1000),
             distance=round(distance, 2)
         )
         keyboard = client_keyboards.AcceptOfferKeyboard(offer.client.language, offer_id=offer.pk)

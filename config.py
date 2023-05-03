@@ -1,8 +1,15 @@
 import os
 
+<<<<<<< HEAD
+
+DEBUG = os.getenv('DEBUG', '0') == '1'
+BUSINESS_BOT_TOKEN = os.getenv('BUSINESS_BOT_TOKEN')
+CLIENT_BOT_TOKEN = os.getenv('CLIENT_BOT_TOKEN')
+=======
 DEBUG = os.getenv('DEBUG', '0') == '1'
 BUSINESS_BOT_TOKEN = os.getenv('BUSINESS_BOT_TOKEN', '')
 CLIENT_BOT_TOKEN = os.getenv('CLIENT_BOT_TOKEN', '')
+>>>>>>> dev
 
 BACKEND_HOST = os.getenv('BACKEND_HOST', '127.0.0.1')
 BACKEND_PORT = int(os.getenv('BACKEND_PORT', 8000))

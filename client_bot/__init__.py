@@ -20,6 +20,7 @@ from . import handlers
 
 executor = Executor(dp, skip_updates=True)
 
+
 async def on_startup(dp):
     # await bot.send_message(chat_id=config.ADMIN_ID, text="Бот запущен")
 

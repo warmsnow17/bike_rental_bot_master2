@@ -124,7 +124,7 @@ class MyBikesKeyboard:
         for bike in items:
             keyboard.row(
                 types.InlineKeyboardButton(
-                    f'{bike.model.name}',
+                    f'{bike.model.name} - {bike.number}',
                     callback_data=f'{self.identifier}:sl:{bike.pk}'
                 )
             )
@@ -192,7 +192,7 @@ class BikeManagementKeyboard:
     def __init__(self, language: str, bike: Bike) -> None:
         self.bike = bike
         self.language = language
-    
+
     def markup(self) -> types.InlineKeyboardMarkup:
         keyboard = types.InlineKeyboardMarkup(row_width=1)
         keyboard.row(

@@ -161,7 +161,7 @@ async def export_bikes(
             worksheet.write(
                 row, 15, bike.user.garages[0].lat
             )
-        
+
         if len(bike.photos) > 0:
             photo = bike.photos[0]
             worksheet.write(

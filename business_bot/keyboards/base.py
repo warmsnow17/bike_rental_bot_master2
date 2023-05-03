@@ -35,7 +35,7 @@ class CancelActionKeyboard:
 
     def __init__(self, language: str):
         self.language = language
-    
+
     def markup(self) -> types.ReplyKeyboardMarkup:
         cancel_text = helpers.language.get_translation(self.language, 'cancel_button_label', 'Отмена')
         return types.ReplyKeyboardMarkup([
@@ -52,7 +52,7 @@ class DoneCancelKeyboard:
 
     def __init__(self, language: str):
         self.language = language
-    
+
     def markup(self) -> types.ReplyKeyboardMarkup:
         done_text = helpers.language.get_translation(self.language, 'done_button_label', 'Готово')
         cancel_text = helpers.language.get_translation(self.language, 'cancel_button_label', 'Отмена')

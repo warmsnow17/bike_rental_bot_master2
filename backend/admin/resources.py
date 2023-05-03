@@ -12,6 +12,7 @@ from .fields import (
     ComputedRequestStatusField, ComputedForeignKeyFieldValueField,
     ComputedSettingNameField, ComputedSelectedOfferBikeOwnerField
 )
+from tortoise.queryset import Q
 
 
 @app.register
@@ -152,7 +153,6 @@ class RentalRequestResource(Model):
             search_mode='equal',
             placeholder='Поиск заявки по номеру',
         )
-
     ]
 
     fields = [
@@ -224,7 +224,6 @@ class RentalRequestResource(Model):
         ),
     ]
 
-
     async def get_toolbar_actions(self, request: Request) -> List[ToolbarAction]:
         return [
         ]
@@ -262,9 +261,9 @@ class OptionsResource(Model):
         ),
     ]
 
-    async def get_toolbar_actions(self, request: Request) -> List[ToolbarAction]:
-        return [
-        ]
+    # async def get_toolbar_actions(self, request: Request) -> List[ToolbarAction]:
+    #     return [
+    #     ]
 
     async def get_actions(self, request: Request) -> List[Action]:
         return [

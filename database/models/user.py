@@ -60,6 +60,5 @@ class User(TimedBaseModel):
         manager = await cls.get_random_manager()
         return manager
 
-
     def __str__(self) -> str:
         return self.username

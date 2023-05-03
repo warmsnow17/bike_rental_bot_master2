@@ -16,19 +16,22 @@ def get_report(bookings):
         0, 1, 'Bike Model'
     )
     worksheet.write(
-        0, 2, 'Rent Days'
+        0, 2, 'Number'
     )
     worksheet.write(
-        0, 3, 'From Date'
+        0, 3, 'Rent Days'
     )
     worksheet.write(
-        0, 4, 'To Date'
+        0, 4, 'From Date'
     )
     worksheet.write(
-        0, 5, 'Price'
+        0, 5, 'To Date'
     )
     worksheet.write(
-        0, 6, 'Sum'
+        0, 6, 'Price'
+    )
+    worksheet.write(
+        0, 7, 'Sum'
     )
     row = 1
     for booking in bookings:
@@ -39,29 +42,33 @@ def get_report(bookings):
             row, 1, booking.bike.model.name
         )
         worksheet.write(
-            row, 2, (booking.to_date.date() - booking.from_date.date()).days
+            row, 2, booking.bike.number
         )
         worksheet.write(
-            row, 3, str(booking.from_date.strftime('%d.%m.%Y'))
+            row, 3, (booking.to_date.date() - booking.from_date.date()).days
         )
         worksheet.write(
-            row, 4, str(booking.to_date.strftime('%d.%m.%Y'))
+            row, 4, str(booking.from_date.strftime('%d.%m.%Y'))
         )
         worksheet.write(
-            row, 5, int(booking.offer.price), currency_format
+            row, 5, str(booking.to_date.strftime('%d.%m.%Y'))
         )
         worksheet.write(
-            row, 6, int(booking.offer.total_sum), currency_format
+            row, 6, int(booking.offer.price), currency_format
+        )
+        worksheet.write(
+            row, 7, int(booking.offer.total_sum), currency_format
         )
         row += 1
     worksheet.freeze_panes(1, 2)
     worksheet.set_column(0, 0, 4)
     worksheet.set_column(1, 1, 15)
-    worksheet.set_column(3, 2, 10)
-    worksheet.set_column(4, 3, 12)
-    worksheet.set_column(5, 4, 12)
-    worksheet.set_column(6, 5, 12)
-    worksheet.set_column(7, 6, 12)
+    worksheet.set_column(2, 2, 10)
+    worksheet.set_column(3, 3, 10)
+    worksheet.set_column(4, 4, 12)
+    worksheet.set_column(5, 5, 12)
+    worksheet.set_column(6, 6, 12)
+    worksheet.set_column(7, 7, 12)
     workbook.close()
     output.seek(0)
     return output

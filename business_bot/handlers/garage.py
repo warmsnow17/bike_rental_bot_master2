@@ -5,6 +5,20 @@ from business_bot import dp, states, keyboards, constants, helpers
 from database.models import User, Garage, Bike, BikeBooking
 from client_bot import dp as client_dp
 
+@dp.message_handler(state=states.SetupGarageState.owner_name, content_types=types.ContentTypes.TEXT)
+async def garage_owner_name_entered(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
+    await state.update_data(owner_name=message.text)
+    await states.SetupGarageState.name.set()
+    reply_text = replies.get('enter_garage_name', 'Как называется компания?').format(user=user)
+    await message.answer(reply_text)
+
+
+@dp.message_handler(state=states.SetupGarageState.name, content_types=types.ContentTypes.TEXT)
+async def garage_name_entered(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
+    await state.update_data(name=message.text)
+    await states.SetupGarageState.location.set()
+    reply_text = replies.get('enter_garage_location', 'Где находится гараж?(Отправьте координаты)').format(user=user)
+    await message.answer(reply_text)
 
 @dp.message_handler(state=states.SetupGarageState.location, content_types=types.ContentType.LOCATION)
 async def garage_location_received(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):

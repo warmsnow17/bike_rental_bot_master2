@@ -19,6 +19,8 @@ class RentRequestState(StatesGroup):
     lat = State()
     lon = State()
     request_confirmation = State()
+    help = State()
+    choose = State()
 
 
 class ActiveRequestState(StatesGroup):

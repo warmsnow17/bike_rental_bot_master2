@@ -3,4 +3,5 @@ __pycache__
 bot.env
 .idea/
 bot_test.env
+venv
 

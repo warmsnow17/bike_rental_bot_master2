@@ -5,12 +5,18 @@ from database.models import User
 
 
 @dp.callback_query_handler(filters.Regexp(keyboards.SelectLanguageKeyboard.get_regexp()), state=states.SelectLanguageState.language)
-async def language_selected(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
+async def language_selected(query: types.CallbackQuery, user: User, state: FSMContext):
     _, _, selected_language = query.data.split(':', maxsplit=2)
     user.language = selected_language
     await user.save()
+    await query.message.answer(constants.AGREEMENT,
+                               reply_markup=keyboards.language.accept_kb())
+    await state.set_state(states.language.SelectLanguageState.agreement)
+
+
+@dp.callback_query_handler(text='accept', state=states.language.SelectLanguageState.agreement)
+async def agreement_accepted(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
     current_state = await state.get_data()
-    replies = constants.REPLIES[user.language]
     await state.finish()
     await query.message.delete()
     if current_state.get('initial_setup'):

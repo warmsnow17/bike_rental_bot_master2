@@ -1,9 +1,11 @@
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, states, keyboards, helpers, constants
-from database.models import User, BikeModel, Bike, BikePhoto
+from business_bot.keyboards import other
+from database.models import User, BikeModel, Bike, BikePhoto, BikeBooking
+from loguru import logger
 from client_bot import dp as client_dp
 from .main_menu import menu_button_select
 
@@ -66,7 +68,7 @@ async def bike_model_selected(query: types.CallbackQuery, user: User, replies: d
     await query.message.edit_text(new_message_text, reply_markup=None)
     reply_text = replies.get('enter_bike_year', 'Какой год выпуска байка?').format(user=user)
     await states.BikeState.year.set()
-    return await query.message.answer(reply_text)
+    await query.message.answer(reply_text, reply_markup=other.get_year())
 
 
 @dp.message_handler(state=states.BikeState.model)
@@ -77,22 +79,14 @@ async def wrong_bike_model(message: types.Message, user: User, replies: dict[str
     await message.answer(reply_text)
 
 
-@dp.message_handler(state=states.BikeState.year)
-async def year_entered(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
-    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
-       return await process_cancel(state, replies, user, message)
-    try:
-        year = int(message.text)
-    except:
-        reply_text = replies.get('bike_year_warning', 'Введи год выпуска').format(user=user)
-        return await message.answer(reply_text)
-    if year < 1800 or year > datetime.now().year:
-        reply_text = replies.get('bike_year_warning', 'Введи год выпуска').format(user=user)
-        return await message.answer(reply_text)
+@dp.callback_query_handler(state=states.BikeState.year)
+async def year_entered(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
+    logger.warning(query.data)
+    year = query.data
     await state.update_data(year=year)
     await states.BikeState.mileage.set()
     reply_text = replies.get('enter_bike_mileage', 'Какой пробег у байка?').format(user=user)
-    return await message.answer(reply_text)
+    return await query.message.answer(reply_text)
 
 
 @dp.message_handler(state=states.BikeState.mileage)
@@ -189,8 +183,8 @@ async def bike_keyless_selected(query: types.CallbackQuery, user: User, replies:
     else:
         await state.update_data(keyless=False, keyless_label=helpers.language.get_translation(user.language, 'no', 'Нет'))
         await query.message.edit_text(replies.get('bike_keyless_not_supported', 'Байк без Keyless'), reply_markup=None)
-    await states.BikeState.price.set()
-    reply_text = replies.get('enter_bike_price', 'Введи цену аренды за сутки').format(user=user)
+    await states.BikeState.number.set()
+    reply_text = replies.get('enter_bike_number', 'Введи гос. номер байка').format(user=user)
     return await query.message.answer(reply_text)
 
 
@@ -199,6 +193,16 @@ async def wrong_bike_keyless(message: types.Message, user: User, replies: dict[s
     if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
     reply_text = replies.get('select_bike_keyless_warning', 'Укажи наличие Keyless доступа у байка').format(user=user)
+    return await message.answer(reply_text)
+
+
+@dp.message_handler(state=states.BikeState.number)
+async def bike_number(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
+    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
+        return await process_cancel(state, replies, user, message)
+    await state.update_data(number=message.text)
+    await states.BikeState.price.set()
+    reply_text = replies.get('enter_bike_price', 'Введи цену аренды за сутки').format(user=user)
     return await message.answer(reply_text)
 
 
@@ -310,6 +314,8 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
                 bike.abs = bike_data['abs']
             if 'keyless' in bike_data:
                 bike.keyless = bike_data['keyless']
+            if 'number' in bike_data:
+                bike.number = bike_data['number']
             if 'price' in bike_data:
                 bike.price = bike_data['price']
             if 'weekly_price' in bike_data:
@@ -331,7 +337,7 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
                     color=bike_data['color'],
                     abs=bike_data['abs'],
                     keyless=bike_data['keyless'],
-                    number='',
+                    number=bike_data['number'],
                     price=bike_data['price'],
                     weekly_price=bike_data['weekly_price'],
                     biweekly_price=bike_data['biweekly_price'],

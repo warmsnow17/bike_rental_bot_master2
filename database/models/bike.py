@@ -46,7 +46,7 @@ class Bike(TimedBaseModel):
         ).filter(
             rental_start_date__lte=request.rent_start_date
         ).select_related('user', 'model')
-        
+
         busy_bike_ids = await BikeBooking.filter(
             from_date__lte=request.rent_end_date,
             to_date__gte=request.rent_start_date

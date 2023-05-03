@@ -14,21 +14,23 @@ class SelectBikeModelKeyboard(SelectObjectKeyboard):
         self.exchange_rate = exchange_rate
 
     async def markup(self) -> types.InlineKeyboardMarkup:
-        keyboard = types.InlineKeyboardMarkup()
+        keyboard = types.InlineKeyboardMarkup(row_width=2)
+        buttons = []
         for item in self.items:
             bikes_available = await item.has_available_bikes(datetime.now())
             if not bikes_available:
                 continue
-            price = math.ceil(float(await item.get_lowes_price()) / self.exchange_rate)
+            price = round(float(await item.get_lowes_price()) / 1000)
             if price > 0:
                 fr = helpers.language.get_translation(self.language, 'from_label', 'from_label')
-                label = f'{item.name} - {fr} {price}$'
+                label = f'{item.name} - {fr} {price}K IDR'
             else:
                 label = f'{item.name}'
-            keyboard.row(
-                types.InlineKeyboardButton(
-                    label,
-                    callback_data=f'{self.identifier}:select:{getattr(item, self.id_attr, "")}'
+            button = types.InlineKeyboardButton(
+                label,
+                callback_data=f'{self.identifier}:select:{getattr(item, self.id_attr, "")}'
                 )
-            )
+            buttons.append(button)
+        keyboard.add(*buttons)
+
         return keyboard

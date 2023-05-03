@@ -42,7 +42,7 @@ async def menu_button_select(message: types.Message, user: User, replies: dict[s
             return await message.answer(reply_text)
         report = helpers.report.get_report(bookings)
         return await message.answer_document(
-            types.InputFile(report, filename='report.xlsx') 
+            types.InputFile(report, filename='report.xlsx')
         )
     else:
         reply_text = replies.get('select_main_menu_action', 'Выберите действие из списка').format(user=user)
