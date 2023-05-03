@@ -138,6 +138,7 @@ class GarageResource(Model):
         )
     ]
 
+
 @app.register
 class RentalRequestResource(Model):
     label = 'Запросы на аренду'
