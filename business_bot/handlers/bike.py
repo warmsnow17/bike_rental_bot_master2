@@ -6,6 +6,8 @@ from business_bot import dp, states, keyboards, helpers, constants
 from business_bot.keyboards import other
 from database.models import User, BikeModel, Bike, BikePhoto, BikeBooking
 from loguru import logger
+from client_bot import dp as client_dp
+from .main_menu import menu_button_select
 
 
 async def process_cancel(state: FSMContext, replies: dict, user: User, message: types.Message):
@@ -244,21 +246,6 @@ async def bike_biweekly_price(message: types.Message, user: User, replies: dict[
         reply_text = replies.get('bike_biweekly_price_warning', 'Введи цену аренды за две недели').format(user=user)
         return await message.answer(reply_text)
     await state.update_data(biweekly_price=price)
-    await states.BikeState.threeweekly_price.set()
-    reply_text = replies.get('enter_bike_threeweekly_price', 'Введи цену аренды за три недели').format(user=user)
-    return await message.answer(reply_text)
-
-
-@dp.message_handler(state=states.BikeState.threeweekly_price)
-async def bike_threeweekly_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
-    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
-        return await process_cancel(state, replies, user, message)
-    try:
-        price = Decimal(message.text)
-    except:
-        reply_text = replies.get('bike_threeweekly_price_warning', 'Введи цену аренды за три недели').format(user=user)
-        return await message.answer(reply_text)
-    await state.update_data(threeweekly_price=price)
     await states.BikeState.monthly_price.set()
     reply_text = replies.get('enter_bike_monthly_price', 'Введи цену аренды за месяц').format(user=user)
     return await message.answer(reply_text)
@@ -274,21 +261,6 @@ async def bike_monthly_price(message: types.Message, user: User, replies: dict[s
         reply_text = replies.get('bike_monthly_price_warning', 'Введи цену аренды за месяц').format(user=user)
         return await message.answer(reply_text)
     await state.update_data(monthly_price=price)
-    await states.BikeState.bimonthly_price.set()
-    reply_text = replies.get('enter_bike_bimonthly_price', 'Введи цену аренды за два месяца и более').format(user=user)
-    return await message.answer(reply_text)
-
-
-@dp.message_handler(state=states.BikeState.bimonthly_price)
-async def bike_bimonthly_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
-    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
-        return await process_cancel(state, replies, user, message)
-    try:
-        price = Decimal(message.text)
-    except:
-        reply_text = replies.get('bike_bimonthly_price_warning', 'Введи цену аренды за два месяца и более').format(user=user)
-        return await message.answer(reply_text)
-    await state.update_data(bimonthly_price=price)
     await states.BikeState.photos.set()
     reply_text = replies.get('send_bike_photos', 'Отправь фотографию байка').format(user=user)
     return await message.answer(reply_text)
@@ -296,7 +268,7 @@ async def bike_bimonthly_price(message: types.Message, user: User, replies: dict
 
 @dp.message_handler(state=states.BikeState.photos, content_types=types.ContentType.TEXT)
 async def bike_photo_text(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
-    if keyboards.DoneCancelKeyboard.is_cancel_message(user.language, message.text):
+    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
     reply_text = replies.get('not_photo_warning', 'Отправь фотографию').format(user=user)
     return await message.answer(reply_text)
@@ -323,6 +295,7 @@ async def review_message(message: types.Message, user: User, replies: dict[str, 
 @dp.callback_query_handler(state=states.BikeState.review)
 async def review_message(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
     _, _, answer = query.data.split(':', maxsplit=2)
+    current_garage = await user.garages.all().first()
     if answer == 'yes':
         bike_data = await state.get_data()
         bike_id = bike_data.get('bike_id', None)
@@ -349,12 +322,8 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
                 bike.weekly_price = bike_data['weekly_price']
             if 'biweekly_price' in bike_data:
                 bike.biweekly_price = bike_data['biweekly_price']
-            if 'threeweekly_price' in bike_data:
-                bike.threeweekly_price = bike_data['threeweekly_price']
             if 'monthly_price' in bike_data:
                 bike.monthly_price = bike_data['monthly_price']
-            if 'bimonthly_price' in bike_data:
-                bike.bimonthly_price = bike_data['bimonthly_price']
             await bike.save()
             await bike.photos.all().delete()
         else:
@@ -372,10 +341,17 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
                     price=bike_data['price'],
                     weekly_price=bike_data['weekly_price'],
                     biweekly_price=bike_data['biweekly_price'],
-                    threeweekly_price=bike_data['threeweekly_price'],
                     monthly_price=bike_data['monthly_price'],
-                    bimonthly_price=bike_data['bimonthly_price']
+                    garage=current_garage
                 )
+                manager = await User.get_random_manager()
+                if manager:
+                    await client_dp.bot.send_message(
+                        manager.telegram_id,
+                        replies.get('new_bike_reply', 'Новый байк #{bike.id} {model.name} от поставщика @{user.username}').format(
+                            user=user, bike=bike, model=model
+                        )
+                    )
         for photo in bike_data['photos']:
             await BikePhoto.create(
                 bike=bike,
@@ -439,3 +415,11 @@ async def availability_date_selected(query: types.CallbackQuery, user: User, rep
         await states.MainMenuState.not_selected.set()
         keyboard = keyboards.MainMenuKeyboard(language=user.language)
         return await query.message.answer(reply_text, reply_markup=keyboard.markup())
+
+
+@dp.message_handler(state=states.BikeState.availability_date)
+async def availability_date_selected(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
+    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
+        return await process_cancel(state, replies, user, message)
+    if keyboards.MainMenuKeyboard.get_button_id_by_text(user.language, message.text):
+        await menu_button_select(message, user, replies, state)

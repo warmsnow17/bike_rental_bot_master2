@@ -1,5 +1,6 @@
 from aiogram import types
 from client_bot import helpers
+import os
 
 
 
@@ -32,3 +33,9 @@ class MainMenuKeyboard:
                 buttons.append(types.KeyboardButton(text))
             keyboard.row(*buttons)
         return keyboard
+
+
+def channel_keyboard():
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("Перейти на канал", url=f"https://t.me/{os.getenv('CHANNEL_USERNAME', '')}"))
+    return keyboard

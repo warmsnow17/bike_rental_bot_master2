@@ -1,6 +1,6 @@
 from .base import (
     SelectInlineKeyboard, CancelActionKeyboard,
-    DoneCancelKeyboard
+    DoneCancelKeyboard, ManagerKeyboard
 )
 from .language import SelectLanguageKeyboard
 from .main_menu import MainMenuKeyboard

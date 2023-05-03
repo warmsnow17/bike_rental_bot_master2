@@ -1,8 +1,9 @@
 import typing
-from datetime import timedelta
+from datetime import datetime, timedelta
 from tortoise import fields
 from .base import TimedBaseModel
-from .request import RentalRequest
+from .request import RentalRequest, BikeOffer
+from .option import Option
 
 
 class BikeModel(TimedBaseModel):
@@ -14,9 +15,9 @@ class BikeModel(TimedBaseModel):
         return total_bikes > 0
 
     async def get_lowes_price(self) -> float:
-        cheapes_bike = await self.bikes.all().order_by('price').first()
+        cheapes_bike = await self.bikes.all().order_by('monthly_price').first()
         if cheapes_bike:
-            return cheapes_bike.price
+            return cheapes_bike.monthly_price / 30
         return 0.0
 
 
@@ -36,6 +37,7 @@ class Bike(TimedBaseModel):
     monthly_price = fields.DecimalField(max_digits=10, decimal_places=2, default=0)
     bimonthly_price = fields.DecimalField(max_digits=10, decimal_places=2, default=0)
     rental_start_date = fields.DatetimeField(null=True)
+    garage = fields.ForeignKeyField('models.Garage', related_name='bikes')
 
     @classmethod
     async def get_for_request(cls, request: RentalRequest) -> list['Bike']:
@@ -44,7 +46,7 @@ class Bike(TimedBaseModel):
         ).filter(
             rental_start_date__lte=request.rent_start_date
         ).select_related('user', 'model')
-        
+
         busy_bike_ids = await BikeBooking.filter(
             from_date__lte=request.rent_end_date,
             to_date__gte=request.rent_start_date
@@ -60,6 +62,35 @@ class Bike(TimedBaseModel):
             if request.keyless in ('yes', 'no'):
                 queryset = queryset.filter(keyless=request.keyless == 'yes')
         return await queryset.all()
+
+    async def get_bike_status(self):
+        last_offer = await BikeOffer.filter(bike=self).select_related('request').order_by('-id').first()
+        if not last_offer:
+            return 'Free'
+        if last_offer.status == BikeOffer.OfferStatuses.ACCEPTED:
+            return 'Manager'
+        if last_offer.status == BikeOffer.OfferStatuses.NEW:
+            option = await Option.filter(key='bike_request_lifetime').first()
+            if not option:
+                request_lifetime = 5
+            else:
+                try:
+                    request_lifetime = int(option.value)
+                except:
+                    request_lifetime = 5
+            offer_date = datetime.now() - timedelta(minutes=int(request_lifetime))
+            if last_offer.request.created_at < offer_date.astimezone():
+                return 'Rental'
+            else:
+                return 'New'
+        if last_offer.status == BikeOffer.OfferStatuses.EXPIRED:
+            return 'Rental'
+        if last_offer.status == BikeOffer.OfferStatuses.COMPLETE:
+            if last_offer.request.rent_start_date < datetime.now().astimezone() and last_offer.request.rent_end_date > datetime.now().astimezone():
+                return 'In rent'
+            else:
+                return 'Free'
+        return 'Free'
 
     def __str__(self):
         return f'{self.model.name} - {self.number}'

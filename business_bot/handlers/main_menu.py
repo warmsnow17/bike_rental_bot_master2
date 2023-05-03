@@ -6,7 +6,15 @@ from database.models import User, BikeModel, BikeBooking
 
 
 @dp.message_handler(
-    state=[states.MainMenuState.not_selected, states.GarageState.bikes_list, states.GarageState.bike_details, states.CalendarState.calendar]
+    state=[
+        states.MainMenuState.not_selected,
+        states.GarageState.bikes_list,
+        states.GarageState.bike_details,
+        states.CalendarState.calendar,
+        states.GarageState.bike_details,
+        states.BotMenuState.language,
+        states.BotMenuState.help
+    ]
 )
 async def menu_button_select(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     if state:
@@ -34,7 +42,7 @@ async def menu_button_select(message: types.Message, user: User, replies: dict[s
             return await message.answer(reply_text)
         report = helpers.report.get_report(bookings)
         return await message.answer_document(
-            types.InputFile(report, filename='report.xlsx') 
+            types.InputFile(report, filename='report.xlsx')
         )
     else:
         reply_text = replies.get('select_main_menu_action', 'Выберите действие из списка').format(user=user)

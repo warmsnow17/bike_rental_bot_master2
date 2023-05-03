@@ -23,6 +23,12 @@ class DashboardResource(Link):
 
 
 @app.register
+class DashboardResource(Link):
+    label = 'Байки'
+    url = '/administrator/bikes/export'
+
+
+@app.register
 class BikeModelResourcce(Model):
     label = 'Модели'
     model = BikeModel
@@ -117,14 +123,6 @@ class GarageResource(Model):
             display=displays.InputOnly(),
             input_=inputs.ForeignKey(User)
         ),
-        Field(
-            name='name',
-            label='Название'
-        ),
-        Field(
-            name='owner_name',
-            label='Имя владельца'
-        ),
         CoordinatesField(
             'coordinates',
             label='Координаты'
@@ -141,21 +139,21 @@ class GarageResource(Model):
         )
     ]
 
-
 @app.register
 class RentalRequestResource(Model):
     label = 'Запросы на аренду'
     model = RentalRequest
     icon = 'fas fa-garage'
-
+    page_size = 100
     filters = [
         filters.Search(
             name='pk',
             label='ID заявки',
             search_mode='equal',
             placeholder='Поиск заявки по номеру',
-        ),
+        )
     ]
+
     fields = [
         'id',
         ComputedForeignKeyField(

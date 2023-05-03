@@ -7,7 +7,7 @@ from .base import TimedBaseModel
 class RentalRequest(TimedBaseModel):
     class Meta:
         ordering = ['-created_at']
-        
+
     class RequestStatuses(IntEnum):
         NEW = 0
         CANCELED = 1

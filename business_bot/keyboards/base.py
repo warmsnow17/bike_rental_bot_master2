@@ -35,7 +35,7 @@ class CancelActionKeyboard:
 
     def __init__(self, language: str):
         self.language = language
-    
+
     def markup(self) -> types.ReplyKeyboardMarkup:
         cancel_text = helpers.language.get_translation(self.language, 'cancel_button_label', 'Отмена')
         return types.ReplyKeyboardMarkup([
@@ -52,7 +52,7 @@ class DoneCancelKeyboard:
 
     def __init__(self, language: str):
         self.language = language
-    
+
     def markup(self) -> types.ReplyKeyboardMarkup:
         done_text = helpers.language.get_translation(self.language, 'done_button_label', 'Готово')
         cancel_text = helpers.language.get_translation(self.language, 'cancel_button_label', 'Отмена')
@@ -94,3 +94,19 @@ class SelectObjectKeyboard:
     @classmethod
     def get_regexp(cls) -> str:
         return f'^{cls.identifier}:[\d\w\-\_]+:[\d\w\-\_]+$'
+
+
+class ManagerKeyboard:
+
+    def __init__(self, language, manager) -> None:
+        self.language = language
+        self.manager = manager
+
+    def markup(self) -> types.InlineKeyboardMarkup:
+        keyboard = types.InlineKeyboardMarkup()
+        if self.manager:
+            keyboard.row(types.InlineKeyboardButton(
+                helpers.language.get_translation(self.language, 'chat_with_manager', 'Чат с менеджером'),
+                url=f'https://t.me/{self.manager.username}'
+            ))
+        return keyboard

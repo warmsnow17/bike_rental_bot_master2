@@ -20,11 +20,18 @@ async def agreement_accepted(query: types.CallbackQuery, user: User, replies: di
     await state.finish()
     await query.message.delete()
     if current_state.get('initial_setup'):
-        reply_text = replies.get('enter_garage_owner_name', 'Для начала работы заполни информацию о себе. Как тебя зовут?').format(user=user)
-        await states.SetupGarageState.owner_name.set()
+        bot = await dp.bot.me
+        reply_text = replies.get('welcome_message', constants.WELCOME_MESSAGE.get(user.language)).format(full_name=bot.full_name)
+        await query.message.answer(reply_text, reply_markup=None)
+        reply_text = replies.get('enter_garage_location', 'Где находится гараж?(Отправьте координаты)').format(user=user)
+        await states.SetupGarageState.location.set()
         return await query.message.answer(reply_text, reply_markup=types.ReplyKeyboardRemove())
     await states.MainMenuState.not_selected.set()
-    reply_text = replies.get('main_menu_reply', 'Добро пожаловать в виртуальный офис! Выбери нужное действие из списка').format(user=user)
+    if current_state.get('welcome_message'):
+        bot = await dp.bot.me
+        reply_text = replies.get('welcome_message', constants.WELCOME_MESSAGE.get(user.language)).format(full_name=bot.full_name)
+        await query.message.answer(reply_text, reply_markup=None)
+    reply_text = replies.get('initial_main_menu_reply', 'Добро пожаловать в виртуальный офис! Выбери нужное действие из списка').format(user=user)
     keyboard = keyboards.MainMenuKeyboard(language=user.language)
     await query.message.answer(reply_text, reply_markup=keyboard.markup())
 

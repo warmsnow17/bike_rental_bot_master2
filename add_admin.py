@@ -16,7 +16,6 @@ import config
 from tortoise import Tortoise
 
 
-
 async def add_admin():
     await Tortoise.init(config=config.TORTOISE_ORM)
     await new_admin.save()

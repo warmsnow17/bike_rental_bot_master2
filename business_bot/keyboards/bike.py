@@ -192,7 +192,7 @@ class BikeManagementKeyboard:
     def __init__(self, language: str, bike: Bike) -> None:
         self.bike = bike
         self.language = language
-    
+
     def markup(self) -> types.InlineKeyboardMarkup:
         keyboard = types.InlineKeyboardMarkup(row_width=1)
         keyboard.row(

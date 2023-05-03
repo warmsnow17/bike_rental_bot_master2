@@ -209,7 +209,7 @@ async def bike_abs_selected(query: types.CallbackQuery, user: User, replies: dic
     else:
         reply_text = replies.get('requested_abs_any_label', 'Наличие ABS неважно')
     await query.message.edit_text(reply_text, reply_markup=None)
-    reply_text = replies.get('request_abs_select', 'Нужен ли Keyless доступ?').format(user=user)
+    reply_text = replies.get('request_keyless_select', 'Нужен ли Keyless доступ?').format(user=user)
     await states.RentRequestState.keyless.set()
     keyboard = keyboards.RequestKeylessSelectionKeyboard(user.language)
     return await query.message.answer(reply_text, reply_markup=keyboard.markup())
@@ -286,7 +286,7 @@ async def helmets_amount_selected(query: types.CallbackQuery, user: User, replie
     await query.message.edit_text(reply_text, reply_markup=None)
     await states.RentRequestState.rent_start_date.set()
     keyboard = keyboards.RequestRentStartDateKeyboard(user.language)
-    reply_text = replies.get('request_rent_type_select', 'Укажи когда ты хочешь начать аренду?').format(user=user)
+    reply_text = replies.get('request_rent_start_select', 'Укажи когда ты хочешь начать аренду?').format(user=user)
     return await query.message.answer(reply_text, reply_markup=keyboard.markup())
 
 
@@ -301,7 +301,7 @@ async def bike_rent_start_date_selected(query: types.CallbackQuery, user: User, 
         year, month, day = params.split(':')
         start_date = datetime(int(year), int(month), int(day), 0, 0, 0, 0)
         await state.update_data(rent_start_date=str(start_date.date()))
-        reply_text = replies.get('rent_end_date_selected_reply', 'Дата начала аренды: {rent_start_date}').format(rent_start_date=start_date.date())
+        reply_text = replies.get('rent_start_date_selected_reply', 'Дата начала аренды: {rent_start_date}').format(rent_start_date=start_date.date())
         await query.message.edit_text(reply_text, reply_markup=None)
         await states.RentRequestState.rent_end_date.set()
         keyboard = keyboards.RequestRentStartDateKeyboard(user.language)
@@ -365,15 +365,26 @@ async def location_message(message: types.Message, user: User, replies: dict[str
         keyboard = keyboards.MainMenuKeyboard(language=user.language)
         return await message.answer(reply_text, reply_markup=keyboard.markup())
 
+    else:
+        await message.reply("Пожалуйста, используйте встроенную функцию Telegram для отправки геолокации.")
+        return
 
-@dp.message_handler(state=states.RentRequestState.location, content_types=types.ContentType.LOCATION)
+
+
+@dp.message_handler(state=states.RentRequestState.location, content_types=[types.ContentType.LOCATION, types.ContentType.VENUE])
 async def rent_request_delivery_location(message: types.Message, user: User, replies: dict[str, str], state: FSMContext, options: dict[str, str]):
-    await state.update_data(lat=message.location.latitude, lon=message.location.longitude)
+
+    if message.content_type == types.ContentType.LOCATION:
+        lat = message.location.latitude
+        lon = message.location.longitude
+    else: # message.content_type == types.ContentType.VENUE
+        lat = message.venue.location.latitude
+        lon = message.venue.location.longitude
+
+    await state.update_data(lat=lat, lon=lon)
     reply_text = replies.get('rent_delivery_location_selected_reply', 'Координаты получены!')
-    await message.answer(reply_text, reply_markup=None)
     await states.RentRequestState.request_confirmation.set()
     data = await state.get_data()
-    logger.warning(data)
     if data.get('additional_params'):
         reply_text = replies.get('rent_delivery_location_selected_reply', constants.ORDER_CONFIRMATION).format(
             model_obj=await BikeModel.get(pk=data['model']),
@@ -407,14 +418,10 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
         rent_type = 'daily'
     elif rent_amount < 14:
         rent_type = 'weekly'
-    elif rent_amount < 21:
-        rent_type = 'biweekly'
     elif rent_amount < 30:
-        rent_type = 'threeweekly'
-    elif rent_amount < 61:
-        rent_type = 'monthly'
+        rent_type = 'biweekly'
     else:
-        rent_type = 'bimonthly'
+        rent_type = 'monthly'
     manager = await User.get_random_manager()
     rent_request = await RentalRequest.create(
         user=user,
@@ -468,14 +475,8 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
             if rent_request.rent_type == 'biweekly':
                 price = bike.biweekly_price / 14
                 price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
-            if rent_request.rent_type == 'threeweekly':
-                price = bike.threeweekly_price / 21
-                price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
             if rent_request.rent_type == 'monthly':
                 price = bike.monthly_price / 30
-                price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
-            if rent_request.rent_type == 'bimonthly':
-                price = bike.bimonthly_price / 60
                 price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
             offer = await BikeOffer.create(
                 bike=bike,
@@ -486,7 +487,11 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
                 total_sum=price * rent_request.rent_amount,
                 total_sum_with_fee=price_with_fee * rent_request.rent_amount
             )
-            message_text = f'Привет! Интересует {bike.model.name} с гос номером {bike.number} c {rent_request.rent_start_date.date()} на {rent_amount} дней \n\n Он свободен сейчас?'
+            business_replies = constants.REPLIES.get(bike.user.language)
+            message_text = business_replies.get(
+                'new_rental_request',
+                'Привет! Интересует {bike.model.name} на {rent_amount} дней с {start_date} \n\n Он свободен сейчас?'
+            ).format(bike=bike, rent_amount=rent_amount, start_date=start_date.strftime("%d.%m.%Y"))
             keyboard = keyboards.NewBikeRentRequestKeyboard(bike.user.language, offer.pk)
             message = await helpers.message.send_message(
                 business_bot_dp.bot,
@@ -558,7 +563,7 @@ async def accept_offer(query: types.CallbackQuery, user: User, replies: dict[str
 
         await states.MainMenuState.not_selected.set()
         reply_text = replies.get(
-            'back_client_menu_reply',
+            'back_simple_client_menu_reply',
             'Ты вернулся в главное меню.'
         ).format(user=user)
         keyboard = keyboards.MainMenuKeyboard(language=user.language)
@@ -637,4 +642,3 @@ async def handle_manager_response(query: types.CallbackQuery, user: User, replie
         offer.status = BikeOffer.OfferStatuses.REJECTED
         await offer.save()
     await query.message.edit_reply_markup(None)
-

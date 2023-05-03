@@ -3,7 +3,7 @@ from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, states, keyboards, constants, helpers
 from database.models import User, Garage, Bike, BikeBooking
-
+from client_bot import dp as client_dp
 
 @dp.message_handler(state=states.SetupGarageState.owner_name, content_types=types.ContentTypes.TEXT)
 async def garage_owner_name_entered(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
@@ -20,17 +20,36 @@ async def garage_name_entered(message: types.Message, user: User, replies: dict[
     reply_text = replies.get('enter_garage_location', 'Где находится гараж?(Отправьте координаты)').format(user=user)
     await message.answer(reply_text)
 
-
 @dp.message_handler(state=states.SetupGarageState.location, content_types=types.ContentType.LOCATION)
 async def garage_location_received(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     data = await state.get_data()
-    garage = await Garage.create(
-        owner=user,
-        name=data['name'],
-        owner_name=data['owner_name'],
-        lat=message.location.latitude,
-        lon=message.location.longitude
-    )
+    update = data.get('update', False)
+    if not update:
+        garage = await Garage.create(
+            owner=user,
+            name='',
+            owner_name='',
+            lat=message.location.latitude,
+            lon=message.location.longitude
+        )
+        manager = await User.get_random_manager()
+        if manager:
+            await client_dp.bot.send_message(
+                manager.telegram_id,
+                replies.get('new_rental', 'Новый поставщик: @{user.username}').format(user=user)
+            )
+    else:
+        garage = await user.garages.all().first()
+        if not garage:
+            garage = await Garage.create(
+                owner=user,
+                lat=message.location.latitude,
+                lon=message.location.longitude
+            )
+        else:
+            garage.lat = message.location.latitude
+            garage.lon = message.location.longitude
+            await garage.save()
     await state.finish()
     await states.MainMenuState.not_selected.set()
     state = dp.current_state()
@@ -47,7 +66,7 @@ async def garage_location_received(message: types.Message, user: User, replies: 
 async def garage_bikes_button_clicked(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
     _, _, key = query.data.split(':', maxsplit=2)
     if key == 'rent':
-        reply_text = replies.get('my_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
+        reply_text = replies.get('rent_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
         rent_bike_ids = await BikeBooking.filter(
             bike__user=user,
             from_date__lte=datetime.now(),
@@ -60,7 +79,7 @@ async def garage_bikes_button_clicked(query: types.CallbackQuery, user: User, re
         )
         return await query.message.edit_text(reply_text, reply_markup=await keyboard.markup())
     if key == 'available':
-        reply_text = replies.get('my_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
+        reply_text = replies.get('available_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
         rent_bike_ids = await BikeBooking.filter(
             bike__user=user,
             from_date__lte=datetime.now(),
@@ -214,7 +233,7 @@ async def bike_details_press(query: types.CallbackQuery, user: User, replies: di
         await states.GarageState.bikes_list.set()
         state = dp.current_state()
         if state_data.get('list_type') == 'available':
-            reply_text = replies.get('my_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
+            reply_text = replies.get('available_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
             rent_bike_ids = await BikeBooking.filter(
                 bike__user=user,
                 from_date__lte=datetime.now(),
@@ -226,7 +245,7 @@ async def bike_details_press(query: types.CallbackQuery, user: User, replies: di
                 add_back_button=True
             )
         if state_data.get('list_type') == 'rent':
-            reply_text = replies.get('my_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
+            reply_text = replies.get('rent_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
             rent_bike_ids = await BikeBooking.filter(
                 bike__user=user,
                 from_date__lte=datetime.now(),
@@ -263,7 +282,7 @@ async def bike_deletion(query: types.CallbackQuery, user: User, replies: dict[st
         await states.GarageState.bikes_list.set()
         state = dp.current_state()
         if state_data.get('list_type') == 'available':
-            reply_text = replies.get('my_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
+            reply_text = replies.get('available_bikes_reply', 'Байки, которые ждут клиентов').format(user=user)
             await state.update_data(list_type='available')
             rent_bike_ids = await BikeBooking.filter(
                 bike__user=user,
@@ -276,7 +295,7 @@ async def bike_deletion(query: types.CallbackQuery, user: User, replies: dict[st
                 add_back_button=True
             )
         if state_data.get('list_type') == 'rent':
-            reply_text = replies.get('my_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
+            reply_text = replies.get('rent_bikes_reply', 'Байки, которые катают клиентов').format(user=user)
             await state.update_data(list_type='rent')
             rent_bike_ids = await BikeBooking.filter(
                 bike__user=user,

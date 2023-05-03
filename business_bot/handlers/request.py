@@ -1,7 +1,9 @@
+import logging
 from datetime import datetime, timedelta
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, states, keyboards, constants, helpers
+from business_bot.middleware.option import haversine_distance
 from client_bot import keyboards as client_keyboards, dp as client_dp
 from database.models import User, BikeOffer, RentalRequest
 
@@ -17,9 +19,13 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
     confirmed_offers_count = await offer.request.offers.filter(status=BikeOffer.OfferStatuses.CONFIRMED).count()
     offer_date = datetime.now() - timedelta(minutes=int(options.get('bike_request_lifetime', 5)))
     if offer.request.created_at < offer_date.astimezone():
+        offer.status = BikeOffer.OfferStatuses.EXPIRED
+        await offer.save()
         reply_text = replies.get('request_not_available', 'Уже не актуально')
         return await query.message.edit_text(reply_text, reply_markup=None)
     if offer.request.status != RentalRequest.RequestStatuses.NEW or confirmed_offers_count > int(options.get('max_confirmed_offers', 5)):
+        offer.status = BikeOffer.OfferStatuses.EXPIRED
+        await offer.save()
         reply_text = replies.get('request_not_available', 'Уже не актуально')
         return await query.message.edit_text(reply_text, reply_markup=None)
     if action == 'cancel':
@@ -36,8 +42,12 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
         await query.message.edit_text(reply_text, reply_markup=None)
         offer.status = BikeOffer.OfferStatuses.CONFIRMED
         await offer.save()
-
-        reply_text = replies.get('confirmed_offer_reply_for_client', constants.DEFAULT_BIKE_OFFER_MESSAGE).format(
+        client_replies = constants.REPLIES.get(offer.client.language)
+        garage = await offer.bike.garage
+        distance = haversine_distance(offer.request.lat, offer.request.lon, garage.lat, garage.lon)
+        logging.info(f"Проверка дистанции {distance}")
+        reply_text = client_replies.get('confirmed_offer_reply_for_client',
+                                        constants.DEFAULT_BIKE_OFFER_MESSAGE).format(
             offer=offer,
             bike=offer.bike,
             color=helpers.language.get_translation(
@@ -54,7 +64,8 @@ async def answer_client_offer(query: types.CallbackQuery, user: User, replies: d
                 'yes_button_label', 'Да'
             ) if offer.bike.keyless else helpers.language.get_translation(user.language, 'no_button_label', 'Нет'),
             usd_price=round(float(offer.price_with_fee) / 1000),
-            usd_total_sum=round(float(offer.total_sum_with_fee) / 1000)
+            usd_total_sum=round(float(offer.total_sum_with_fee) / 1000),
+            distance=round(distance, 2)
         )
         keyboard = client_keyboards.AcceptOfferKeyboard(offer.client.language, offer_id=offer.pk)
         photos = await offer.bike.photos.all()

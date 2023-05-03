@@ -1,6 +1,7 @@
 from aiogram import types
 from aiogram.dispatcher.middlewares import BaseMiddleware
 from database.models import ReplyMessage
+from business_bot import constants
 import config
 
 
@@ -11,10 +12,7 @@ class ReplyMiddleware(BaseMiddleware):
         user = data.get('user', None)
         if user and user.language:
             language = user.language
-        replies = await ReplyMessage.get_for_language(language=language)
-        data['replies'] = {}
-        for reply in replies:
-            data['replies'][reply.action] = reply
+        data['replies'] = constants.REPLIES.get(language, constants.REPLIES[config.DEFAULT_LANGUAGE])
 
     async def on_pre_process_message(self, message: types.Message, data: dict):
         await self.load_replies(data)

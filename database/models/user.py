@@ -44,12 +44,21 @@ class User(TimedBaseModel):
     async def has_garages(self) -> bool:
         return (await self.garages.all().count()) > 0
 
+    async def update_username(self, new_username: str) -> None:
+        self.username = new_username
+        await self.save()
+
     @classmethod
     async def get_random_manager(cls) -> typing.Optional['User']:
         managers = await User.filter(is_manager=True).annotate(order=Random()).order_by('order')
         if len(managers) == 0:
             return None
         return managers[0]
+
+    @classmethod
+    async def get_manager_for_user(cls, user: 'User') -> typing.Optional['User']:
+        manager = await cls.get_random_manager()
+        return manager
 
     def __str__(self) -> str:
         return self.username

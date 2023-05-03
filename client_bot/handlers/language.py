@@ -1,6 +1,6 @@
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
-from client_bot import dp, keyboards, states
+from client_bot import dp, keyboards, states, constants
 from database.models import User
 
 
@@ -12,6 +12,7 @@ async def language_selected(query: types.CallbackQuery, user: User, replies: dic
     await state.finish()
     await query.message.delete()
     await states.MainMenuState.not_selected.set()
+    replies = constants.REPLIES.get(user.language)
     reply_text = replies.get('main_menu_reply', 'Ты оказался в главном меню').format(user=user)
     keyboard = keyboards.MainMenuKeyboard(language=user.language)
     await query.message.answer(reply_text, reply_markup=keyboard.markup())
@@ -20,4 +21,4 @@ async def language_selected(query: types.CallbackQuery, user: User, replies: dic
 @dp.message_handler(state=states.SelectLanguageState.language)
 async def language_not_selected(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     reply_text = replies.get('select_language_error', 'Выбери язык из списка').format(user=user)
-    await message.reply(reply_text)
+    await message.answer(reply_text)
