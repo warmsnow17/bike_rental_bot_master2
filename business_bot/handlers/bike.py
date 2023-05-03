@@ -3,7 +3,9 @@ from datetime import datetime, timedelta
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, states, keyboards, helpers, constants
+from business_bot.keyboards import other
 from database.models import User, BikeModel, Bike, BikePhoto, BikeBooking
+from loguru import logger
 
 
 async def process_cancel(state: FSMContext, replies: dict, user: User, message: types.Message):
@@ -64,7 +66,7 @@ async def bike_model_selected(query: types.CallbackQuery, user: User, replies: d
     await query.message.edit_text(new_message_text, reply_markup=None)
     reply_text = replies.get('enter_bike_year', 'Какой год выпуска байка?').format(user=user)
     await states.BikeState.year.set()
-    return await query.message.answer(reply_text)
+    await query.message.answer(reply_text, reply_markup=other.get_year())
 
 
 @dp.message_handler(state=states.BikeState.model)
@@ -75,22 +77,14 @@ async def wrong_bike_model(message: types.Message, user: User, replies: dict[str
     await message.answer(reply_text)
 
 
-@dp.message_handler(state=states.BikeState.year)
-async def year_entered(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
-    if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
-       return await process_cancel(state, replies, user, message)
-    try:
-        year = int(message.text)
-    except:
-        reply_text = replies.get('bike_year_warning', 'Введи год выпуска').format(user=user)
-        return await message.answer(reply_text)
-    if year < 1800 or year > datetime.now().year:
-        reply_text = replies.get('bike_year_warning', 'Введи год выпуска').format(user=user)
-        return await message.answer(reply_text)
+@dp.callback_query_handler(state=states.BikeState.year)
+async def year_entered(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
+    logger.warning(query.data)
+    year = query.data
     await state.update_data(year=year)
     await states.BikeState.mileage.set()
     reply_text = replies.get('enter_bike_mileage', 'Какой пробег у байка?').format(user=user)
-    return await message.answer(reply_text)
+    return await query.message.answer(reply_text)
 
 
 @dp.message_handler(state=states.BikeState.mileage)

@@ -2,9 +2,34 @@ import asyncio
 from datetime import datetime, timedelta
 from aiogram import types, filters, exceptions
 from aiogram.dispatcher import FSMContext
-from client_bot import dp, keyboards, states, helpers, constants
+from client_bot import dp, keyboards, states, helpers, constants, bot
+from client_bot.keyboards import other
 from business_bot import dp as business_bot_dp
 from database.models import User, BikeModel, RentalRequest, Bike, BikeOffer, BikeBooking
+from loguru import logger
+
+
+
+@dp.callback_query_handler(other.callback_bike.filter(), state=states.RentRequestState.help)
+async def show_help(query: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    await bot.delete_message(query.message.chat.id, query.message.message_id)
+    await state.set_state(states.RentRequestState.choose)
+    photo = types.InputFile(f'client_bot/photos/{callback_data["photo"]}')
+    bike = await BikeModel.get(name=callback_data['name'])
+    logger.warning(bike.name)
+    await state.update_data(model=bike.pk, model_name=bike.name)
+    description = constants.BIKES[bike.name]
+    await query.message.answer_photo(photo, description, reply_markup=other.choose_or_back())
+    await query.answer()
+
+
+@dp.callback_query_handler(text='back_help', state=states.RentRequestState.choose)
+async def back_help(query: types.CallbackQuery, replies: dict[str, str], state: FSMContext):
+    await bot.delete_message(query.message.chat.id, query.message.message_id)
+    await state.set_state(states.RentRequestState.help)
+    reply_text = replies.get('rent_a_bike_init_reply', constants.HELP_MESSAGE_TEXT)
+    keyboard = other.bikes()
+    await query.message.answer(reply_text, reply_markup=keyboard)
 
 
 @dp.callback_query_handler(filters.Regexp(keyboards.SelectBikeModelKeyboard.get_regexp()), state=states.RentRequestState.prepare)
@@ -14,6 +39,22 @@ async def prepare_bike_model_selected(query: types.CallbackQuery, user: User, re
     await state.update_data(model=model_id, model_name=model.name if model else '')
     await query.message.edit_reply_markup(None)
     new_message_text = replies.get('prepare_bike_model_selected', 'Выбрана модель: {model.name}').format(model=model)
+    await query.message.answer(new_message_text, reply_markup=keyboards.CancelActionKeyboard(user.language).markup())
+
+    reply_text = replies.get('request_additional_params_reply', 'Хочешь указать дополнительные параметры байка?').format(user=user)
+    await states.RentRequestState.additional_params.set()
+    keyboard = keyboards.AdditionalParamsKeyboard(user.language)
+    return await query.message.answer(reply_text, reply_markup=keyboard.markup())
+
+
+@dp.callback_query_handler(text='choose_help', state=states.RentRequestState.choose)
+async def help_bike_model_selected(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
+    # _, _, model_id = query.data.split(':', maxsplit=2)
+    # model = await BikeModel.get_or_none(pk=int(model_id))
+    # await state.update_data(model=model_id, model_name=model.name if model else '')
+    await query.message.edit_reply_markup(None)
+    data = await state.get_data()
+    new_message_text = replies.get('prepare_bike_model_selected', f'Выбрана модель: {data["model_name"]}')
     await query.message.answer(new_message_text, reply_markup=keyboards.CancelActionKeyboard(user.language).markup())
 
     reply_text = replies.get('request_additional_params_reply', 'Хочешь указать дополнительные параметры байка?').format(user=user)
@@ -332,6 +373,7 @@ async def rent_request_delivery_location(message: types.Message, user: User, rep
     await message.answer(reply_text, reply_markup=None)
     await states.RentRequestState.request_confirmation.set()
     data = await state.get_data()
+    logger.warning(data)
     if data.get('additional_params'):
         reply_text = replies.get('rent_delivery_location_selected_reply', constants.ORDER_CONFIRMATION).format(
             model_obj=await BikeModel.get(pk=data['model']),
@@ -444,10 +486,7 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
                 total_sum=price * rent_request.rent_amount,
                 total_sum_with_fee=price_with_fee * rent_request.rent_amount
             )
-            message_text = replies.get(
-                'new_rental_request',
-                'Привет! Интересует {bike.model.name} с гос номером {bike.number} на {rent_amount} дней \n\n Он свободен сейчас?'
-            ).format(bike=bike, rent_amount=rent_amount)
+            message_text = f'Привет! Интересует {bike.model.name} с гос номером {bike.number} c {rent_request.rent_start_date.date()} на {rent_amount} дней \n\n Он свободен сейчас?'
             keyboard = keyboards.NewBikeRentRequestKeyboard(bike.user.language, offer.pk)
             message = await helpers.message.send_message(
                 business_bot_dp.bot,
@@ -598,3 +637,4 @@ async def handle_manager_response(query: types.CallbackQuery, user: User, replie
         offer.status = BikeOffer.OfferStatuses.REJECTED
         await offer.save()
     await query.message.edit_reply_markup(None)
+

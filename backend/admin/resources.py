@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 from starlette.requests import Request
 from fastapi_admin.app import app
 from fastapi_admin.resources import Field, Link, Model, inputs, ToolbarAction, Action
@@ -12,6 +12,7 @@ from .fields import (
     ComputedRequestStatusField, ComputedForeignKeyFieldValueField,
     ComputedSettingNameField, ComputedSelectedOfferBikeOwnerField
 )
+from tortoise.queryset import Q
 
 
 @app.register
@@ -146,13 +147,14 @@ class RentalRequestResource(Model):
     label = 'Запросы на аренду'
     model = RentalRequest
     icon = 'fas fa-garage'
+
     filters = [
         filters.Search(
             name='pk',
             label='ID заявки',
             search_mode='equal',
             placeholder='Поиск заявки по номеру',
-        )
+        ),
     ]
     fields = [
         'id',
