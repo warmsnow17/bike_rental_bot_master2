@@ -1,3 +1,8 @@
+[tool.aerich]
+tortoise_orm = "config.TORTOISE_ORM"
+location = "./migrations"
+src_folder = "./."
+
 [tool.poetry]
 name = "bike-rental-bot-master2"
 version = "0.1.0"
@@ -8,8 +13,6 @@ packages = [{include = "bike_rental_bot_master2"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-tortoise = "^0.1.1"
-requests = "^2.28.2"
 
 
 [build-system]
