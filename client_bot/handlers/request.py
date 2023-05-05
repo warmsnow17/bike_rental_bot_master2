@@ -36,9 +36,11 @@ async def back_help(query: types.CallbackQuery, replies: dict[str, str], state: 
 async def prepare_bike_model_selected(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
     _, _, model_id = query.data.split(':', maxsplit=2)
     model = await BikeModel.get_or_none(pk=int(model_id))
+    logger.warning("-------------")
+    logger.warning(query.data)
     await state.update_data(model=model_id, model_name=model.name if model else '')
     await query.message.edit_reply_markup(None)
-    new_message_text = replies.get('prepare_bike_model_selected', 'Выбрана модель: {model.name}').format(model=model)
+    new_message_text = replies.get(f'prepare_bike_model_selected', 'Выбрана модель: {model.name}').format(model=model.name)
     await query.message.answer(new_message_text, reply_markup=keyboards.CancelActionKeyboard(user.language).markup())
 
     reply_text = replies.get('request_additional_params_reply', 'Хочешь указать дополнительные параметры байка?').format(user=user)
@@ -49,12 +51,11 @@ async def prepare_bike_model_selected(query: types.CallbackQuery, user: User, re
 
 @dp.callback_query_handler(text='choose_help', state=states.RentRequestState.choose)
 async def help_bike_model_selected(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext):
-    # _, _, model_id = query.data.split(':', maxsplit=2)
-    # model = await BikeModel.get_or_none(pk=int(model_id))
-    # await state.update_data(model=model_id, model_name=model.name if model else '')
     await query.message.edit_reply_markup(None)
     data = await state.get_data()
-    new_message_text = replies.get('prepare_bike_model_selected', f'Выбрана модель: {data["model_name"]}')
+    logger.warning("-------------")
+    logger.warning(data)
+    new_message_text = f'Выбрана модель: {data["model_name"]}'
     await query.message.answer(new_message_text, reply_markup=keyboards.CancelActionKeyboard(user.language).markup())
 
     reply_text = replies.get('request_additional_params_reply', 'Хочешь указать дополнительные параметры байка?').format(user=user)
@@ -466,9 +467,12 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
                 break
             if rent_request.selected_offer_id is not None:
                 break
+            logger.warning('_______________________________________________________rent_type')
+            logger.warning(rent_request.rent_type)
             if rent_request.rent_type == 'daily':
                 price = bike.price
                 price_with_fee = float(bike.price) + (float(bike.price) * (int(options.get('fee_percent', 10)) / 100.0))
+                logger.warning(price_with_fee)
             if rent_request.rent_type == 'weekly':
                 price = bike.weekly_price / 7
                 price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
@@ -478,6 +482,8 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
             if rent_request.rent_type == 'monthly':
                 price = bike.monthly_price / 30
                 price_with_fee = float(price) + (float(price) * (int(options.get('fee_percent', 10)) / 100.0))
+                logger.warning('_______________________________________________________')
+                logger.warning(price)
             offer = await BikeOffer.create(
                 bike=bike,
                 client=user,
@@ -490,7 +496,7 @@ async def rent_request_answer_selected(query: types.CallbackQuery, user: User, r
             business_replies = constants.REPLIES.get(bike.user.language)
             message_text = business_replies.get(
                 'new_rental_request',
-                'Привет! Интересует {bike.model.name} на {rent_amount} дней с {start_date} \n\n Он свободен сейчас?'
+                'Привет! Интересует {bike.model.name} номер {bike.number} на {rent_amount} дней с {start_date} \n\n Он свободен сейчас?'
             ).format(bike=bike, rent_amount=rent_amount, start_date=start_date.strftime("%d.%m.%Y"))
             keyboard = keyboards.NewBikeRentRequestKeyboard(bike.user.language, offer.pk)
             message = await helpers.message.send_message(

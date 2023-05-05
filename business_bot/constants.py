@@ -217,8 +217,8 @@ DEFAULT_BIKE_OFFER_MESSAGE = """Модель: {bike.model.name}
 Цвет: {color}
 ABS: {abs_support}
 Бесключевой доступ: {keyless_support}
-Цена за сутки: {usd_price}$
-Стоимость: {usd_total_sum}$
+Цена за сутки: {usd_price}K IDR
+Стоимость: {usd_total_sum}K IDR
 Расстояние: {distance} км"""
 
 
@@ -228,8 +228,8 @@ Milage: {bike.mileage}
 Colour: {color}
 ABS: {abs_support}
 Keyless: {keyless_support}
-Daily price: {usd_price}$
-Total Price: {usd_total_sum}$
+Daily price: {usd_price}K IDR
+Total Price: {usd_total_sum}K IDR
 Distance: {distance} kilometers"""
 
 DEFAULT_BIKE_OFFER_MESSAGE_ID = """Model: {bike.model.name}
@@ -238,8 +238,8 @@ Jarak Tempuh: {bike.mileage}
 Warna: {color}
 ABS: {abs_support}
 Tanpa kunci: {keyless_support}
-Harga harian: {usd_price}$
-Total harga: {usd_total_sum}$"""
+Harga harian: {usd_price}K IDR
+Total harga: {usd_total_sum}K IDR"""
 
 WELCOME_MESSAGE = {
     'ru': """Привет! Я бот для поиска клиентов. Я задам тебе 7 вопросов про твой байк и потом предложу его клиенту.""",
@@ -459,3 +459,24 @@ REPLIES = {
         'help_message': 'Mengobrol dengan manajer untuk mendapatkan bantuan'
     }
 }
+
+AGREEMENT_ru = '''Прочитайте и примите условия пользователя.
+Если вы согласны с условиями нажмите "Принять".\n\n"Условия использования
+Бота.\n1. Клиент заплатит вам напрямую, бот может сопровождать проведение
+сделки.\n2. Если вы не отвечаете на заявку в течении 24 часов, ваш объект
+скрывается из каталога и больше не показывается клиентам.\n3. Сервис не
+раскрывает информацию о своих пользователях."'''
+
+AGREEMENT_en = '''Read and accept the user terms.
+If you agree with the terms, click "Accept".\n\n"Terms of Use
+Bota.\n1. The client will pay you directly, the bot can accompany the
+deals.\n2. If you do not respond to the request within 24 hours, your property
+is hidden from the directory and is no longer shown to clients.\n3. Service not
+discloses information about its users."'''
+
+AGREEMENT_id = '''Baca dan terima persyaratan pengguna.
+Jika Anda setuju dengan persyaratan, klik "Terima".\n\n"Persyaratan Penggunaan
+Bot.\n1. Klien akan membayar Anda secara langsung, bot dapat menemani
+penawaran.\n2. Jika Anda tidak menanggapi permintaan dalam waktu 24 jam, properti Anda
+disembunyikan dari direktori dan tidak lagi ditampilkan ke klien.\n3. Layanan tidak
+mengungkapkan informasi tentang penggunanya."'''

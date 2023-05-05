@@ -6,13 +6,15 @@ from business_bot import dp, states, keyboards, constants, helpers
 from business_bot.middleware.option import haversine_distance
 from client_bot import keyboards as client_keyboards, dp as client_dp
 from database.models import User, BikeOffer, RentalRequest
-
+from loguru import logger
 
 @dp.callback_query_handler(filters.Regexp(client_keyboards.NewBikeRentRequestKeyboard.get_regexp()), state='*')
 async def answer_client_offer(query: types.CallbackQuery, user: User, replies: dict[str, str], state: FSMContext, options: dict[str, str]):
     _, action, offer_id = query.data.split(':', maxsplit=2)
     idr_exchange_rate = float(options.get('idr_per_usd_exchange_rate', 15100))
     offer = await BikeOffer.get_or_none(pk=int(offer_id)).select_related('bike', 'client', 'request', 'bike__model')
+    logger.warning('-_____________________________________________________________________')
+    logger.warning(offer.price)
     if not offer:
         reply_text = replies.get('request_not_available', 'Уже не актуально')
         return await query.message.edit_text(reply_text, reply_markup=None)

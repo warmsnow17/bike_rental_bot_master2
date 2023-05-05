@@ -2,14 +2,24 @@ from aiogram import types, filters, Dispatcher
 from aiogram.dispatcher import FSMContext
 from business_bot import dp, keyboards, states, constants
 from database.models import User
+from loguru import logger
 
 
 @dp.callback_query_handler(filters.Regexp(keyboards.SelectLanguageKeyboard.get_regexp()), state=states.SelectLanguageState.language)
 async def language_selected(query: types.CallbackQuery, user: User, state: FSMContext):
     _, _, selected_language = query.data.split(':', maxsplit=2)
     user.language = selected_language
+    logger.warning(selected_language)
     await user.save()
-    await query.message.answer(constants.AGREEMENT,
+    if user.language == 'id':
+        text = constants.AGREEMENT_id
+
+    if user.language == 'en':
+        text = constants.AGREEMENT_en
+
+    if user.language == 'ru':
+        text = constants.AGREEMENT_ru
+    await query.message.answer(text,
                                reply_markup=keyboards.language.accept_kb())
     await state.set_state(states.language.SelectLanguageState.agreement)
 

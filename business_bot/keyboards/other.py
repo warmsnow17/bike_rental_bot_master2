@@ -7,7 +7,7 @@ def get_year():
     for i in range(2018, 2024):
         button = InlineKeyboardButton(text=str(i), callback_data=i)
         buttons.insert(0, button)
-    before_2018 = InlineKeyboardButton(text='До 2018', callback_data='До 2018')
+    before_2018 = InlineKeyboardButton(text='До 2018', callback_data=2017)
     buttons.append(before_2018)
     kb.add(*buttons)
     return kb

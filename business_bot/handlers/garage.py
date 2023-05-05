@@ -1,6 +1,8 @@
 from datetime import datetime
 from aiogram import types, filters
 from aiogram.dispatcher import FSMContext
+from loguru import logger
+
 from business_bot import dp, states, keyboards, constants, helpers
 from database.models import User, Garage, Bike, BikeBooking
 from client_bot import dp as client_dp
@@ -108,7 +110,7 @@ async def rent_bikes_list_press(query: types.CallbackQuery, user: User, replies:
             page=int(param),
             add_back_button=True
         )
-        return query.message.edit_reply_markup(await keyboard.markup())
+        return await query.message.edit_reply_markup(await keyboard.markup())
     if action == 'bk':
         reply_text = replies.get('rental_calendar_reply', 'Здесь ты можешь посмотреть доступные байки байки в аренде').format(user=user)
         keyboard = keyboards.GarageBikesKeyboard(user.language)
@@ -157,12 +159,13 @@ async def available_bikes_list_press(query: types.CallbackQuery, user: User, rep
             page=int(param),
             add_back_button=True
         )
-        return query.message.edit_reply_markup(await keyboard.markup())
+        return await query.message.edit_reply_markup(await keyboard.markup())
     if action == 'bk':
         reply_text = replies.get('rental_calendar_reply', 'Здесь ты можешь посмотреть доступные байки байки в аренде').format(user=user)
         keyboard = keyboards.GarageBikesKeyboard(user.language)
         return await query.message.edit_text(reply_text, reply_markup=keyboard.markup())
     if action == 'sl':
+        logger.warning('________>__________')
         bike = await Bike.get_or_none(pk=int(param), user=user).select_related('model')
         if not bike:
             return

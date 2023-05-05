@@ -206,12 +206,18 @@ async def bike_number(message: types.Message, user: User, replies: dict[str, str
     return await message.answer(reply_text)
 
 
+import re
+
+
 @dp.message_handler(state=states.BikeState.price)
 async def bike_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
+
+    cleaned_message_text = re.sub(r'\D', '', message.text)  # Очистите входные данные, оставив только цифры
+
     try:
-        price = Decimal(message.text)
+        price = int(cleaned_message_text)
     except:
         reply_text = replies.get('bike_price_warning', 'Введи цену аренды за сутки').format(user=user)
         return await message.answer(reply_text)
@@ -225,8 +231,10 @@ async def bike_price(message: types.Message, user: User, replies: dict[str, str]
 async def bike_weekly_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
+    cleaned_message_text = re.sub(r'\D', '', message.text)  # Очистите входные данные, оставив только цифры
+
     try:
-        price = Decimal(message.text)
+        price = int(cleaned_message_text)
     except:
         reply_text = replies.get('bike_weekly_price_warning', 'Введи цену аренды за неделю').format(user=user)
         return await message.answer(reply_text)
@@ -240,8 +248,10 @@ async def bike_weekly_price(message: types.Message, user: User, replies: dict[st
 async def bike_biweekly_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
+    cleaned_message_text = re.sub(r'\D', '', message.text)  # Очистите входные данные, оставив только цифры
+
     try:
-        price = Decimal(message.text)
+        price = int(cleaned_message_text)
     except:
         reply_text = replies.get('bike_biweekly_price_warning', 'Введи цену аренды за две недели').format(user=user)
         return await message.answer(reply_text)
@@ -255,8 +265,10 @@ async def bike_biweekly_price(message: types.Message, user: User, replies: dict[
 async def bike_monthly_price(message: types.Message, user: User, replies: dict[str, str], state: FSMContext):
     if keyboards.CancelActionKeyboard.is_cancel_message(user.language, message.text):
         return await process_cancel(state, replies, user, message)
+    cleaned_message_text = re.sub(r'\D', '', message.text)  # Очистите входные данные, оставив только цифры
+
     try:
-        price = Decimal(message.text)
+        price = int(cleaned_message_text)
     except:
         reply_text = replies.get('bike_monthly_price_warning', 'Введи цену аренды за месяц').format(user=user)
         return await message.answer(reply_text)
@@ -298,6 +310,8 @@ async def review_message(query: types.CallbackQuery, user: User, replies: dict[s
     current_garage = await user.garages.all().first()
     if answer == 'yes':
         bike_data = await state.get_data()
+        logger.warning('___________________________________________________')
+        logger.warning(bike_data)
         bike_id = bike_data.get('bike_id', None)
         if bike_id:
             bike = await Bike.get_or_none(pk=bike_id)
