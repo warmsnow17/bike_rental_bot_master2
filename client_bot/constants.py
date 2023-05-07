@@ -383,3 +383,6 @@ SUBSCRIBE_TO_CHANNEL = {
     'ru': "Пожалуйста, подпишитесь на наш канал, чтобы начать использовать бота. Затем вернитесь в бота и попробуйте снова.",
     'en': "Please subscribe to our channel to start using the bot. Then return to the bot and try again.",
 }
+
+
+COMMANDS_RU = [{"start": "старт"}]

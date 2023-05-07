@@ -1,6 +1,6 @@
 from aiogram import types, filters, Dispatcher
 from aiogram.dispatcher import FSMContext
-from business_bot import dp, keyboards, states, constants
+from business_bot import dp, keyboards, states, constants, bot
 from database.models import User
 from loguru import logger
 
@@ -13,12 +13,41 @@ async def language_selected(query: types.CallbackQuery, user: User, state: FSMCo
     await user.save()
     if user.language == 'id':
         text = constants.AGREEMENT_id
-
+        await bot.set_my_commands(
+            [
+                types.BotCommand(command="office", description="masuk ke menu utama"),
+                types.BotCommand(command="update_garage", description="mengubah informasi perusahaan"),
+                types.BotCommand(command="language", description="ubah bahasa"),
+                types.BotCommand(command="start", description="mulai ulang bot"),
+                types.BotCommand(command="help", description="bantuan manager"),
+            ]
+        )
+        await bot.get_updates()
     if user.language == 'en':
         text = constants.AGREEMENT_en
-
+        await bot.set_my_commands(
+            [
+                types.BotCommand(command="office", description="go to the main menu"),
+                types.BotCommand(command="update_garage", description="change garage information"),
+                types.BotCommand(command="language", description="change the language"),
+                types.BotCommand(command="start", description="restart the bot"),
+                types.BotCommand(command="help", description="manager's help"),
+            ]
+        )
+        await bot.get_updates()
     if user.language == 'ru':
         text = constants.AGREEMENT_ru
+
+        await bot.set_my_commands(
+            [
+                types.BotCommand(command="office", description="перейти в главное меню"),
+                types.BotCommand(command="update_garage", description="обновить информацию о гараже"),
+                types.BotCommand(command="language", description="изменить язык"),
+                types.BotCommand(command="start", description="перезапустить бота"),
+                types.BotCommand(command="help", description="помощь менеджера"),
+            ]
+        )
+        await bot.get_updates()
     await query.message.answer(text,
                                reply_markup=keyboards.language.accept_kb())
     await state.set_state(states.language.SelectLanguageState.agreement)

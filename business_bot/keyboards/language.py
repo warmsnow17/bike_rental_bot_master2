@@ -8,6 +8,6 @@ class SelectLanguageKeyboard(SelectInlineKeyboard):
 
 def accept_kb():
     kb = InlineKeyboardMarkup(resize_keyboard=True)
-    button = InlineKeyboardButton('Принять', callback_data='accept')
+    button = InlineKeyboardButton('Accept', callback_data='accept')
     kb.row(button)
     return kb

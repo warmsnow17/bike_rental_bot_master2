@@ -32,6 +32,7 @@ async def on_startup(dp):
     )
     await db.init(config=config.TORTOISE_ORM)
 
+
 async def on_shutdown(dp):
     await db.close_connections()
 
@@ -42,3 +43,4 @@ async def init(dispatcher: Dispatcher):
 @executor.on_shutdown
 async def shutdown(dispatcher: Dispatcher):
     await on_shutdown(dispatcher)
+
